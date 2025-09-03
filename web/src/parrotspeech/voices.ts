@@ -1,7 +1,4 @@
 
-import path from "path";
-import fs from "fs/promises";
-
 export interface Voice {
     name: string;
     language: string;
@@ -463,15 +460,7 @@ export function setVoiceDataUrl(url: string): void {
 
 
 async function getVoiceFile(id: VoiceId): Promise<ArrayBufferLike> {
-    // Node.js environment
-    if (fs && Object.hasOwn(fs, 'readFile')) {
-        const dirname = typeof __dirname !== "undefined" ? __dirname : (typeof import.meta !== "undefined" ? (import.meta as any).dirname : "");
-        const file = path.resolve(dirname, `../voices/${id}.bin`);
-        const { buffer } = await fs.readFile(file);
-        return buffer;
-    }
-
-    // Browser environment
+    // Browser environment - only support fetching from URLs
     const url = `${voiceDataUrl}/${id}.bin`;
 
     let cache: Cache | undefined;

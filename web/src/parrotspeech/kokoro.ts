@@ -33,12 +33,13 @@ export class KokoroTTS {
   }
 
   /**
-   * Load a KokoroTTS model from the Hugging Face Hub.
-   * @param {string} model_id The model id
+   * Load a KokoroTTS model from the Hugging Face Hub or local path.
+   * @param {string} model_id The model id or local path (e.g., "/models/kokoro-v0_19")
    * @param {Object} options Additional options
    * @param {"fp32"|"fp16"|"q8"|"q4"|"q4f16"} [options.dtype="fp32"] The data type to use.
    * @param {"wasm"|"webgpu"|"cpu"|null} [options.device=null] The device to run the model on.
    * @param {import("@huggingface/transformers").ProgressCallback} [options.progress_callback=null] A callback function that is called with progress information.
+   * @param {boolean} [options.local_files_only=false] Whether to only use local files (no HF Hub download).
    * @returns {Promise<KokoroTTS>} The loaded model
    */
   static async from_pretrained(
@@ -46,24 +47,57 @@ export class KokoroTTS {
     { 
       dtype = "fp32" as const, 
       device = null, 
-      progress_callback = null 
+      progress_callback = null,
+      local_files_only = false
+    }: {
+      dtype?: "fp32" | "fp16" | "q8" | "q4" | "q4f16";
+      device?: "wasm" | "webgpu" | "cpu" | null;
+      progress_callback?: ((progress: any) => void) | null;
+      local_files_only?: boolean;
+    } = {}
+  ) {
+    const model = StyleTextToSpeech2Model.from_pretrained(model_id, { 
+      progress_callback: progress_callback || undefined, 
+      dtype, 
+      device: device || undefined,
+      local_files_only
+    });
+    const tokenizer = AutoTokenizer.from_pretrained(model_id, { 
+      progress_callback: progress_callback || undefined,
+      local_files_only
+    });
+
+    const info = await Promise.all([model, tokenizer]);
+    return new KokoroTTS(...info);
+  }
+
+  /**
+   * Load a KokoroTTS model from local files in the public folder.
+   * @param {string} model_path The path to the model in the public folder (e.g., "/models/kokoro-v0_19")
+   * @param {Object} options Additional options
+   * @param {"fp32"|"fp16"|"q8"|"q4"|"q4f16"} [options.dtype="fp32"] The data type to use.
+   * @param {"wasm"|"webgpu"|"cpu"|null} [options.device=null] The device to run the model on.
+   * @param {import("@huggingface/transformers").ProgressCallback} [options.progress_callback=null] A callback function that is called with progress information.
+   * @returns {Promise<KokoroTTS>} The loaded model
+   */
+  static async from_local(
+    model_path: string,
+    { 
+      dtype = "fp32" as const, 
+      device = null, 
+      progress_callback = null
     }: {
       dtype?: "fp32" | "fp16" | "q8" | "q4" | "q4f16";
       device?: "wasm" | "webgpu" | "cpu" | null;
       progress_callback?: ((progress: any) => void) | null;
     } = {}
   ) {
-    const model = StyleTextToSpeech2Model.from_pretrained(model_id, { 
-      progress_callback: progress_callback || undefined, 
-      dtype, 
-      device: device || undefined 
+    return this.from_pretrained(model_path, {
+      dtype,
+      device,
+      progress_callback,
+      local_files_only: true
     });
-    const tokenizer = AutoTokenizer.from_pretrained(model_id, { 
-      progress_callback: progress_callback || undefined 
-    });
-
-    const info = await Promise.all([model, tokenizer]);
-    return new KokoroTTS(...info);
   }
 
   get voices() {
@@ -187,6 +221,12 @@ export const env = {
   },
   get wasmPaths() {
     return hf.backends.onnx.wasm?.wasmPaths;
+  },
+  set allowLocalModels(value: boolean) {
+    hf.allowLocalModels = value;
+  },
+  get allowLocalModels() {
+    return hf.allowLocalModels;
   },
 };
 

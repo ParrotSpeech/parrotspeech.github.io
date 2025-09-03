@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Download,
   Pause,
@@ -13,13 +13,14 @@ import { Textarea } from "./components/ui/textarea";
 import { Card, CardContent } from "./components/ui/card";
 import { Separator } from "./components/ui/separator";
 import { Toaster } from "./components/ui/sonner";
-import {ParrotSpeechLogo} from "./components/icons/parrotspeech";
+import { ParrotSpeechLogo } from "./components/icons/parrotspeech";
 
 import { TextStatistics } from "./components/text-statistics";
 import { VoiceSelector, type Voices } from "./components/voice-selector";
 import { SpeedControl } from "./components/speed-control";
 import { AudioChunk } from "./components/audio-chunk";
 import type { AudioChunkData } from "./components/audio-chunk";
+import { toast } from "sonner";
 
 function App() {
 
@@ -40,62 +41,63 @@ function App() {
   const [status, setStatus] = useState<
     "loading" | "ready" | "generating" | "error"
   >("loading");
-  const [error] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const worker = useRef<Worker | null>(null);
-  const [voices] = useState<Voices | null>(null);
+  const [voices, setVoices] = useState<Voices | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<keyof Voices>("af_heart");
   const [chunks, setChunks] = useState<AudioChunkData[]>([]);
-  const [result] = useState<Blob | null>(null);
+  const [result, setResult] = useState<Blob | null>(null);
 
-  // useEffect(() => {
-  //   worker.current ??= new Worker(new URL("./worker.js", import.meta.url), {
-  //     type: "module",
-  //   });
 
-  //   // Create a callback function for messages from the worker thread.
-  //   // @ts-expect-error - No need to define type for data
-  //   const onMessageReceived = ({ data }) => {
-  //     switch (data.status) {
-  //       case "device":
-  //         toast("Device detected: " + data.device);
-  //         break;
-  //       case "ready":
-  //         toast("Model loaded successfully");
-  //         setStatus("ready");
-  //         setVoices(data.voices);
-  //         break;
-  //       case "error":
-  //         setStatus("error");
-  //         setError(data.data);
-  //         break;
-  //       case "stream": {
-  //         setChunks((prev) => [...prev, data.chunk]);
-  //         break;
-  //       }
-  //       case "complete": {
-  //         setStatus("ready");
-  //         setResult(data.audio);
-  //         break;
-  //       }
-  //     }
-  //   };
+  useEffect(() => {
+    worker.current ??= new Worker(new URL("./worker.js", import.meta.url), {
+      type: "module",
+    });
 
-  //   const onErrorReceived = (e: ErrorEvent) => {
-  //     console.error("Worker error:", e);
-  //     setError(e.message);
-  //   };
+    // Create a callback function for messages from the worker thread.
+    // @ts-expect-error - No need to define type for data
+    const onMessageReceived = ({ data }) => {
+      switch (data.status) {
+        case "device":
+          toast("Device detected: " + data.device);
+          break;
+        case "ready":
+          toast("Model loaded successfully");
+          setStatus("ready");
+          setVoices(data.voices);
+          break;
+        case "error":
+          setStatus("error");
+          setError(data.data);
+          break;
+        case "stream": {
+          setChunks((prev) => [...prev, data.chunk]);
+          break;
+        }
+        case "complete": {
+          setStatus("ready");
+          setResult(data.audio);
+          break;
+        }
+      }
+    };
 
-  //   // Attach the callback function as an event listener.
-  //   worker.current?.addEventListener("message", onMessageReceived);
-  //   worker.current?.addEventListener("error", onErrorReceived);
+    const onErrorReceived = (e: ErrorEvent) => {
+      console.error("Worker error:", e);
+      setError(e.message);
+    };
 
-  //   // Define a cleanup function for when the component is unmounted.
-  //   return () => {
-  //     worker.current?.removeEventListener("message", onMessageReceived);
-  //     worker.current?.removeEventListener("error", onErrorReceived);
-  //   };
-  // }, []);
+    // Attach the callback function as an event listener.
+    worker.current?.addEventListener("message", onMessageReceived);
+    worker.current?.addEventListener("error", onErrorReceived);
+
+    // Define a cleanup function for when the component is unmounted.
+    return () => {
+      worker.current?.removeEventListener("message", onMessageReceived);
+      worker.current?.removeEventListener("error", onErrorReceived);
+    };
+  }, []);
 
   const processed =
     lastGeneration &&
