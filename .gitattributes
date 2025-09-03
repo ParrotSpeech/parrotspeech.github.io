@@ -5,6 +5,9 @@
 web/public/models/onnx/model_q8f16.onnx filter=lfs diff=lfs merge=lfs -text
 web/public/models/onnx/model_quantized.onnx filter=lfs diff=lfs merge=lfs -text
 
+# Voice model files directory
+web/public/models/voices/*.bin filter=lfs diff=lfs merge=lfs -text
+
 # Other common large file formats
 *.bin filter=lfs diff=lfs merge=lfs -text
 *.pt filter=lfs diff=lfs merge=lfs -text
