@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import {
   Download,
   Pause,
@@ -14,11 +14,9 @@ import { Card, CardContent } from "./components/ui/card";
 import { Separator } from "./components/ui/separator";
 import { Toaster } from "./components/ui/sonner";
 import {ParrotSpeechLogo} from "./components/icons/parrotspeech";
-import { toast } from "sonner";
 
 import { TextStatistics } from "./components/text-statistics";
-import { VoiceSelector } from "./components/voice-selector";
-import type { Voices } from "./components/voice-selector";
+import { VoiceSelector, type Voices } from "./components/voice-selector";
 import { SpeedControl } from "./components/speed-control";
 import { AudioChunk } from "./components/audio-chunk";
 import type { AudioChunkData } from "./components/audio-chunk";
@@ -42,13 +40,13 @@ function App() {
   const [status, setStatus] = useState<
     "loading" | "ready" | "generating" | "error"
   >("loading");
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
 
   const worker = useRef<Worker | null>(null);
-  const [voices, setVoices] = useState<Voices | null>(null);
+  const [voices] = useState<Voices | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<keyof Voices>("af_heart");
   const [chunks, setChunks] = useState<AudioChunkData[]>([]);
-  const [result, setResult] = useState<Blob | null>(null);
+  const [result] = useState<Blob | null>(null);
 
   // useEffect(() => {
   //   worker.current ??= new Worker(new URL("./worker.js", import.meta.url), {

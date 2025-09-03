@@ -8,9 +8,12 @@ import {
 
 import type { Voices, Voice } from "@/parrotspeech/voices";
 
+// Re-export the types for consumers
+export type { Voices, Voice } from "@/parrotspeech/voices";
+
 interface VoiceSelectorProps {
   voices: Voices;
-  selectedVoice: string;
+  selectedVoice: keyof Voices;
   onVoiceChange: (voice: keyof Voices) => void;
 }
 

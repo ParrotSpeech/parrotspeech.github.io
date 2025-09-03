@@ -1,4 +1,8 @@
-export function ParrotSpeechLogo(props) {
+interface ParrotSpeechLogoProps {
+  [key: string]: any;
+}
+
+export function ParrotSpeechLogo(props: ParrotSpeechLogoProps) {
   return (
     <svg {...props} viewBox="0 0 1024 1024" fill="none">
       <path
