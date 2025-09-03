@@ -5,15 +5,15 @@ import {
   Play,
   Copy,
   Check,
+  AudioWaveform,
 } from "lucide-react";
 
-import { cn } from "./lib/utils";
-import { Button } from "./components/ui/button";
-import { Textarea } from "./components/ui/textarea";
-import { Card, CardContent } from "./components/ui/card";
-import { Separator } from "./components/ui/separator";
-import { Toaster } from "./components/ui/sonner";
-import {ParrotSpeechLogo} from "./components/icons/parrotspeech";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 
 import { TextStatistics } from "./components/text-statistics";
@@ -23,8 +23,7 @@ import { SpeedControl } from "./components/speed-control";
 import { AudioChunk } from "./components/audio-chunk";
 import type { AudioChunkData } from "./components/audio-chunk";
 
-function App() {
-
+export default function AudioReader() {
   const [text, setText] = useState(
     "Kokoro is an open-weight TTS model with 82 million parameters. Despite its lightweight architecture, it delivers comparable quality to larger models while being significantly faster and more cost-efficient. With Apache-licensed weights, Kokoro can be deployed anywhere from production environments to personal projects. It can even run 100% locally in your browser, powered by Transformers.js!",
   );
@@ -50,54 +49,54 @@ function App() {
   const [chunks, setChunks] = useState<AudioChunkData[]>([]);
   const [result, setResult] = useState<Blob | null>(null);
 
-  // useEffect(() => {
-  //   worker.current ??= new Worker(new URL("./worker.js", import.meta.url), {
-  //     type: "module",
-  //   });
+  useEffect(() => {
+    worker.current ??= new Worker(new URL("./worker.js", import.meta.url), {
+      type: "module",
+    });
 
-  //   // Create a callback function for messages from the worker thread.
-  //   // @ts-expect-error - No need to define type for data
-  //   const onMessageReceived = ({ data }) => {
-  //     switch (data.status) {
-  //       case "device":
-  //         toast("Device detected: " + data.device);
-  //         break;
-  //       case "ready":
-  //         toast("Model loaded successfully");
-  //         setStatus("ready");
-  //         setVoices(data.voices);
-  //         break;
-  //       case "error":
-  //         setStatus("error");
-  //         setError(data.data);
-  //         break;
-  //       case "stream": {
-  //         setChunks((prev) => [...prev, data.chunk]);
-  //         break;
-  //       }
-  //       case "complete": {
-  //         setStatus("ready");
-  //         setResult(data.audio);
-  //         break;
-  //       }
-  //     }
-  //   };
+    // Create a callback function for messages from the worker thread.
+    // @ts-expect-error - No need to define type for data
+    const onMessageReceived = ({ data }) => {
+      switch (data.status) {
+        case "device":
+          toast("Device detected: " + data.device);
+          break;
+        case "ready":
+          toast("Model loaded successfully");
+          setStatus("ready");
+          setVoices(data.voices);
+          break;
+        case "error":
+          setStatus("error");
+          setError(data.data);
+          break;
+        case "stream": {
+          setChunks((prev) => [...prev, data.chunk]);
+          break;
+        }
+        case "complete": {
+          setStatus("ready");
+          setResult(data.audio);
+          break;
+        }
+      }
+    };
 
-  //   const onErrorReceived = (e: ErrorEvent) => {
-  //     console.error("Worker error:", e);
-  //     setError(e.message);
-  //   };
+    const onErrorReceived = (e: ErrorEvent) => {
+      console.error("Worker error:", e);
+      setError(e.message);
+    };
 
-  //   // Attach the callback function as an event listener.
-  //   worker.current?.addEventListener("message", onMessageReceived);
-  //   worker.current?.addEventListener("error", onErrorReceived);
+    // Attach the callback function as an event listener.
+    worker.current?.addEventListener("message", onMessageReceived);
+    worker.current?.addEventListener("error", onErrorReceived);
 
-  //   // Define a cleanup function for when the component is unmounted.
-  //   return () => {
-  //     worker.current?.removeEventListener("message", onMessageReceived);
-  //     worker.current?.removeEventListener("error", onErrorReceived);
-  //   };
-  // }, []);
+    // Define a cleanup function for when the component is unmounted.
+    return () => {
+      worker.current?.removeEventListener("message", onMessageReceived);
+      worker.current?.removeEventListener("error", onErrorReceived);
+    };
+  }, []);
 
   const processed =
     lastGeneration &&
@@ -126,14 +125,13 @@ function App() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-
   return (
     <>
       <div className="min-h-screen bg-gray-50/50 p-4 md:p-12">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-4">
             <div className="inline-flex items-center gap-2">
-              <ParrotSpeechLogo className="size-12 text-blue-500" />
+              <AudioWaveform className="size-12 text-blue-500" />
               <h1 className="text-5xl font-bold text-gray-900">ParrotSpeech</h1>
             </div>
             <p className="text-gray-500">
@@ -301,5 +299,3 @@ function App() {
     </>
   );
 }
-
-export default App

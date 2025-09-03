@@ -6,9 +6,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import type { KokoroTTS } from "kokoro-js";
-
-export type Voices = KokoroTTS["voices"];
+import type { Voices, Voice } from "@/parrotspeech/voices";
 
 interface VoiceSelectorProps {
   voices: Voices;
@@ -27,7 +25,7 @@ export function VoiceSelector({
         <SelectValue placeholder="Select voice" />
       </SelectTrigger>
       <SelectContent>
-        {Object.entries(voices).map(([key, voice]) => (
+        {Object.entries(voices).map(([key, voice]: [string, Voice]) => (
           <SelectItem key={key} value={key}>
             {voice.name} ({voice.language === "en-us" ? "American" : "British"}{" "}
             {voice.gender})
