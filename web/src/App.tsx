@@ -24,7 +24,7 @@ import type { AudioChunkData } from "./components/audio-chunk";
 function App() {
 
   const [text, setText] = useState(
-    "Kokoro is an open-weight TTS model with 82 million parameters. Despite its lightweight architecture, it delivers comparable quality to larger models while being significantly faster and more cost-efficient. With Apache-licensed weights, Kokoro can be deployed anywhere from production environments to personal projects. It can even run 100% locally in your browser, powered by Transformers.js!",
+    "The crucial role of chaos in our brain’s most extraordinary functions That the human mind treads a delicate line between order and disorder is a radical idea that’s gaining traction - and is changing our understanding of intelligence, consciousness and creativity. Think back through your day and consider all the amazing tasks your brain has helped you perform. From brushing your teeth to eating your lunch and reading the words on this page, your thoughts, feelings and actions may appear to be the product of a finely tuned machine.",
   );
   const [lastGeneration, setLastGeneration] = useState<{
     text: string;
@@ -129,13 +129,13 @@ function App() {
     <>
       <div className="min-h-screen bg-gray-50/50 p-4 md:p-12">
         <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-4">
+          <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2">
               <ParrotSpeechLogo className="size-12 text-blue-500" />
               <h1 className="text-5xl font-bold text-gray-900">ParrotSpeech</h1>
             </div>
-            <p className="text-gray-500">
-              Convert text to natural-sounding speech
+            <p className="text-gray-500 text-sm">
+              Natural voices, anywhere, no connection required.
             </p>
           </div>
 
@@ -146,7 +146,7 @@ function App() {
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   placeholder="Type or paste your text here..."
-                  className={`transition-all min-h-[180px] text-lg leading-relaxed ${processed && status === "ready" ? "bg-green-100" : ""} resize-y ${status === "loading" ? "text-gray-300" : ""}`}
+                  className={`transition-all min-h-[180px] leading-relaxed ${processed && status === "ready" ? "bg-green-100" : ""} resize-y ${status === "loading" ? "text-gray-300" : ""}`}
                 />
                 <Button
                   size="icon"

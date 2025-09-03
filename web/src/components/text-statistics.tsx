@@ -15,8 +15,8 @@ export function TextStatistics({ text }: TextStatisticsProps) {
     <div className="flex gap-6 text-sm text-muted-foreground">
       {stats.map(({ label, value }) => (
         <div key={label} className="flex gap-1.5">
-          <span className="font-semibold">{label}:</span>
-          <span className="font-medium">{value}</span>
+          <span className="font-semibold text-sm">{label}:</span>
+          <span className="font-medium text-sm">{value}</span>
         </div>
       ))}
     </div>
