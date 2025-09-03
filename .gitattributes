@@ -8,6 +8,10 @@ web/public/models/onnx/model_quantized.onnx filter=lfs diff=lfs merge=lfs -text
 # Voice model files directory
 web/public/models/voices/*.bin filter=lfs diff=lfs merge=lfs -text
 
+# ONNX Runtime WebAssembly files
+web/public/ort-wasm-simd-threaded.jsep.wasm filter=lfs diff=lfs merge=lfs -text
+web/public/ort-wasm-simd-threaded.wasm filter=lfs diff=lfs merge=lfs -text
+
 # Other common large file formats
 *.bin filter=lfs diff=lfs merge=lfs -text
 *.pt filter=lfs diff=lfs merge=lfs -text
