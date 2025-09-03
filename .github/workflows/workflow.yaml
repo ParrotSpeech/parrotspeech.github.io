@@ -39,7 +39,7 @@ jobs:
         run: npm ci
         working-directory: ./web
       - name: Build
-        run: npm run build
+        run: npm run builds
         working-directory: ./web
       - name: Setup Pages
         uses: actions/configure-pages@v5
