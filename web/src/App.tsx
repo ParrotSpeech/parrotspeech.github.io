@@ -43,7 +43,7 @@ function App() {
   >("loading");
   const [error, setError] = useState<string | null>(null);
 
-  const worker = useRef<Worker | null>(null);
+  const workerRef = useRef<Worker | null>(null);
   const [voices, setVoices] = useState<Voices | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<keyof Voices>("af_heart");
   const [chunks, setChunks] = useState<AudioChunkData[]>([]);
@@ -51,7 +51,7 @@ function App() {
 
 
   useEffect(() => {
-    worker.current ??= new Worker(new URL("./worker.js", import.meta.url), {
+    workerRef.current ??= new Worker(new URL("./tts-worker.ts", import.meta.url), {
       type: "module",
     });
 
@@ -89,13 +89,13 @@ function App() {
     };
 
     // Attach the callback function as an event listener.
-    worker.current?.addEventListener("message", onMessageReceived);
-    worker.current?.addEventListener("error", onErrorReceived);
+    workerRef.current?.addEventListener("message", onMessageReceived);
+    workerRef.current?.addEventListener("error", onErrorReceived);
 
     // Define a cleanup function for when the component is unmounted.
     return () => {
-      worker.current?.removeEventListener("message", onMessageReceived);
-      worker.current?.removeEventListener("error", onErrorReceived);
+      workerRef.current?.removeEventListener("message", onMessageReceived);
+      workerRef.current?.removeEventListener("error", onErrorReceived);
     };
   }, []);
 
@@ -112,7 +112,7 @@ function App() {
       setCurrentChunkIndex(0);
       const params = { text, voice: selectedVoice, speed };
       setLastGeneration(params);
-      worker.current?.postMessage(params);
+      workerRef.current?.postMessage(params);
     }
     if (currentChunkIndex === -1) {
       setCurrentChunkIndex(0);
@@ -134,7 +134,7 @@ function App() {
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2">
               <ParrotSpeechLogo className="size-12 text-blue-500" />
-              <h1 className="text-5xl font-bold text-gray-900">ParrotSpeech</h1>
+              <h1 className="text-4xl font-bold text-gray-900">ParrotSpeech</h1>
             </div>
             <p className="text-gray-500 text-sm">
               Natural voices, anywhere, no connection required.
