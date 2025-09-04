@@ -59,15 +59,24 @@ async function initializeModel() {
 
     // Load the model from local files
     const modelPath = "/models";
-    const executionProviders = device === "wasm" ? ["wasm"] : ["webgpu", "wasm"];
+    
+    // Set up execution providers with fallback
+    let executionProviders: string[];
+    if (device === "wasm") {
+      executionProviders = ["wasm"];
+    } else {
+      // Try webgpu first, fall back to wasm
+      executionProviders = ["webgpu", "wasm"];
+    }
 
     await tts.load(modelPath, {
       executionProviders: executionProviders as any,
-      wasmPaths: "/",
     });
-    console.log("success here")
+    
+    console.log("✅ Model loaded successfully in worker");
     self.postMessage({ status: "ready", voices: tts.voices, device });
   } catch (e: any) {
+    console.error("❌ Worker initialization failed:", e);
     self.postMessage({ status: "error", error: e.message });
     throw e;
   }
