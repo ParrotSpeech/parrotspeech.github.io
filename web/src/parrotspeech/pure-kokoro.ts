@@ -1,4 +1,8 @@
-import * as ort from 'onnxruntime-web';
+import { 
+  setupOnnxRuntime, 
+  createInferenceSession,
+  Tensor
+} from "../onnx-setup";
 import { phonemize } from "./phonemize";
 import { TextSplitterStream } from "./splitter";
 import { getVoiceData, VOICES } from "./voices";
@@ -6,66 +10,118 @@ import { getVoiceData, VOICES } from "./voices";
 const STYLE_DIM = 256;
 const SAMPLE_RATE = 24000;
 
-// Configure ONNX Runtime for browser
-ort.env.wasm.wasmPaths = '/';
-ort.env.wasm.numThreads = 1;
-
 /**
  * Pure client-side TTS using ONNX Runtime Web
- * No dependency on Hugging Face Transformers
+ * Based on HuggingFace Transformers backend architecture
  */
 export class PureKokoroTTS {
-  private session: ort.InferenceSession | null = null;
+  private session: any = null;
   private tokenizer: any = null;
 
   constructor() {
-    // Constructor is empty - models loaded via load() method
+    // Initialize ONNX Runtime
+    setupOnnxRuntime();
   }
 
   /**
    * Load model, tokenizer and config from local files
-   * @param {string} modelPath - Path to the model directory in public folder
-   * @param {Object} options - Loading options
    */
   async load(modelPath: string, options: {
-    executionProviders?: ('wasm' | 'webgl' | 'webgpu')[];
-    wasmPaths?: string;
+    executionProviders?: string[];
   } = {}) {
     const { 
-      executionProviders = ['wasm'], 
-      wasmPaths = '/' 
+      executionProviders = ['wasm']
     } = options;
 
     try {
-      // Set WASM paths
-      ort.env.wasm.wasmPaths = wasmPaths;
+      console.log('🚀 Starting model initialization...');
 
       // Load config
-      console.log('Loading config...');
+      console.log('📋 Loading config...');
       const configResponse = await fetch(`${modelPath}/config.json`);
-      const config = await configResponse.json();
-      console.log('Config loaded:', config);
+      if (!configResponse.ok) {
+        throw new Error(`Failed to load config: ${configResponse.status} ${configResponse.statusText}`);
+      }
+      await configResponse.json(); // Just validate it loads
+      console.log('✅ Config loaded');
 
       // Load tokenizer
-      console.log('Loading tokenizer...');
+      console.log('🔤 Loading tokenizer...');
       const tokenizerResponse = await fetch(`${modelPath}/tokenizer.json`);
+      if (!tokenizerResponse.ok) {
+        throw new Error(`Failed to load tokenizer: ${tokenizerResponse.status} ${tokenizerResponse.statusText}`);
+      }
       this.tokenizer = await tokenizerResponse.json();
-      console.log("tokenizer", this.tokenizer);
+      console.log('✅ Tokenizer loaded');
 
       // Load ONNX model
-      console.log('Loading ONNX model...');
+      console.log('🧠 Loading ONNX model...');
       const modelUrl = `${modelPath}/onnx/model_q8f16.onnx`;
-      console.log("modelUrl", modelUrl)
-      this.session = await ort.InferenceSession.create(modelUrl, {
-        executionProviders: executionProviders,
-      });
+      
+      // Fetch model as array buffer
+      const modelResponse = await fetch(modelUrl);
+      if (!modelResponse.ok) {
+        throw new Error(`Failed to fetch model: ${modelResponse.status} ${modelResponse.statusText}`);
+      }
+      const modelBuffer = await modelResponse.arrayBuffer();
+      const modelData = new Uint8Array(modelBuffer);
+      console.log(`📦 Model fetched: ${modelData.length} bytes`);
 
-      console.log('✅ Model loaded successfully!');
-      console.log('Input names:', this.session.inputNames);
-      console.log('Output names:', this.session.outputNames);
+      // Determine execution providers with fallback logic
+      let providers = [...executionProviders];
+      
+      // Filter out unsupported providers
+      const availableProviders = [];
+      for (const provider of providers) {
+        try {
+          if (provider === 'webgpu' && (!navigator.gpu || !('gpu' in navigator))) {
+            console.warn('⚠️ WebGPU not available, skipping');
+            continue;
+          }
+          availableProviders.push(provider);
+        } catch (e) {
+          console.warn(`⚠️ Provider ${provider} not available:`, e);
+        }
+      }
+
+      // Ensure we have at least WASM as fallback
+      if (!availableProviders.includes('wasm')) {
+        availableProviders.push('wasm');
+      }
+
+      console.log('🎯 Available execution providers:', availableProviders);
+
+      // Try creating session with each provider until one succeeds
+      let lastError: Error | null = null;
+      
+      for (const provider of availableProviders) {
+        try {
+          console.log(`🔧 Attempting to create session with: ${provider}`);
+          
+          const sessionOptions = {
+            executionProviders: [provider]
+          };
+
+          // Create session using the transformers-style approach
+          this.session = await createInferenceSession(modelData, sessionOptions, { provider });
+          
+          console.log(`✅ Model loaded successfully with provider: ${provider}`);
+          console.log('📝 Input names:', this.session.inputNames);
+          console.log('📤 Output names:', this.session.outputNames);
+          return; // Success, exit the function
+          
+        } catch (error: any) {
+          console.warn(`❌ Failed with provider ${provider}:`, error.message);
+          lastError = error;
+          // Continue to try next provider
+        }
+      }
+      
+      // If we get here, all providers failed
+      throw lastError || new Error('All execution providers failed');
 
     } catch (error) {
-      console.error('❌ Failed to load model:', error);
+      console.error('💥 Failed to load model:', error);
       throw error;
     }
   }
@@ -104,14 +160,14 @@ export class PureKokoroTTS {
   /**
    * Create ONNX tensor from array
    */
-  private createTensor(data: number[] | Float32Array, dims: number[], type: 'int64' | 'float32' = 'float32'): ort.Tensor {
+  private createTensor(data: number[] | Float32Array, dims: number[], type: 'int64' | 'float32' = 'float32'): any {
     if (type === 'int64') {
       const numArray = Array.isArray(data) ? data : Array.from(data);
       const int64Data = new BigInt64Array(numArray.map(x => BigInt(x)));
-      return new ort.Tensor('int64', int64Data, dims);
+      return new Tensor('int64', int64Data, dims);
     } else {
       const float32Data = data instanceof Float32Array ? data : new Float32Array(data);
-      return new ort.Tensor('float32', float32Data, dims);
+      return new Tensor('float32', float32Data, dims);
     }
   }
 
@@ -165,7 +221,7 @@ export class PureKokoroTTS {
     const speedTensor = this.createTensor([speed], [1]);
 
     // Prepare inputs
-    const feeds: Record<string, ort.Tensor> = {
+    const feeds: Record<string, any> = {
       'input_ids': inputIds,
       'style': styleTensor,
       'speed': speedTensor

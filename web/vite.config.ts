@@ -12,7 +12,8 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['onnxruntime-web']
+    include: ['onnxruntime-web'],
+    exclude: []
   },
   server: {
     headers: {
@@ -31,5 +32,17 @@ export default defineConfig({
         format: 'es'
       }
     }
-  }
+  },
+  worker: {
+    format: 'es',
+    plugins: () => [react(), tailwindcss()],
+    rollupOptions: {
+      external: [],
+      output: {
+        format: 'es'
+      }
+    }
+  },
+  // Ensure WASM files are treated as assets
+  assetsInclude: ['**/*.wasm']
 })
